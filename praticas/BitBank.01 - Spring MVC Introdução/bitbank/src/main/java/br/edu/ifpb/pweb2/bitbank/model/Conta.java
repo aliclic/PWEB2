@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Data
 public class Conta implements Serializable {
@@ -16,11 +17,16 @@ public class Conta implements Serializable {
 
     private String numero;
 
+    @DateTimeFormat(pattern = "dd/MM/yyyy")
     private Date data;
 
     private Set<Transacao> transacoes = new HashSet<Transacao>();
 
     private Correntista correntista;
+
+    public Conta(Correntista correntista) {
+        this.correntista = correntista;
+    }
 
     public BigDecimal getSaldo() {
         BigDecimal total = BigDecimal.ZERO;
