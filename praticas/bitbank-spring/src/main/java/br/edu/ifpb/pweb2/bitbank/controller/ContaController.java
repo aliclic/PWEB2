@@ -2,16 +2,15 @@ package br.edu.ifpb.pweb2.bitbank.controller;
 
 import br.edu.ifpb.pweb2.bitbank.model.Conta;
 import br.edu.ifpb.pweb2.bitbank.model.Correntista;
+import br.edu.ifpb.pweb2.bitbank.model.Transacao;
 import br.edu.ifpb.pweb2.bitbank.service.ContaService;
 import br.edu.ifpb.pweb2.bitbank.service.CorrentistaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -37,25 +36,64 @@ public class ContaController {
         return correntistaService.findAll();
     }
 
-    @RequestMapping(value = "/save", method = RequestMethod.POST)
-    public ModelAndView adicioneConta(Conta conta, ModelAndView modelAndView) {
+    @PostMapping
+    public ModelAndView saveConta(Conta conta, ModelAndView modelAndView, RedirectAttributes attr) {
+        String operacao = (conta.getId() == null) ? "criada" : "salva";
         contaService.save(conta);
-        modelAndView.setViewName("contas/list");
         modelAndView.addObject("contas", contaService.findAll());
+        modelAndView.setViewName("redirect:contas");
+        attr.addFlashAttribute("mensagem", "Conta "+operacao+" com sucesso!");
         return modelAndView;
     }
 
-    @RequestMapping("/list")
-    public ModelAndView liste(ModelAndView modelAndView) {
+    @GetMapping
+    public ModelAndView listAll(ModelAndView modelAndView) {
         modelAndView.setViewName("contas/list");
         modelAndView.addObject("contas", contaService.findAll());
         return modelAndView;
     }
 
     @RequestMapping("/{id}")
-    public String getCorrentistaById(@PathVariable(value = "id") Integer id, Model model) {
-        model.addAttribute("conta", contaService.findById(id));
-        return "contas/form";
+    public ModelAndView getCorrentistaById(@PathVariable(value = "id") Integer id, ModelAndView model) {
+        model.addObject("conta", contaService.findById(id));
+        model.setViewName("contas/form");
+        return model;
     }
+
+    @RequestMapping("/nuconta")
+    public String getNuConta() {
+        return "contas/operacao";
+    }
+
+    @RequestMapping(value = "/operacao")
+    public String operacaoConta(String nuConta, Transacao transacao, ModelAndView model) {
+        String proxPagina = "";
+        if (nuConta != null && transacao.getValor() == null) {
+            Conta conta = contaService.findByNumeroWithTransacoes(nuConta);
+            if (conta != null) {
+                model.addObject("conta", conta);
+                model.addObject("transacao", transacao);
+                proxPagina = "contas/operacao";
+            } else {
+                model.addObject("mensagem", "Conta inexistente!");
+                proxPagina = "contas/operacao";
+            }
+        } else {
+            Conta conta = contaService.findByNumeroWithTransacoes(nuConta);
+            conta.addTransacao(transacao);
+            contaService.save(conta);
+            proxPagina = "redirect:/contas/"+conta.getId()+"/transacoes";
+        }
+        return proxPagina;
+    }
+
+    @RequestMapping(value = "/{id}/transacoes")
+    public ModelAndView addTransacaoConta(@PathVariable("id") Integer idConta, ModelAndView model) {
+        Conta conta = contaService.findByIdWithTransacoes(idConta);
+        model.addObject("conta", conta);
+        model.setViewName("contas/transacoes");
+        return model;
+    }
+
 }
 

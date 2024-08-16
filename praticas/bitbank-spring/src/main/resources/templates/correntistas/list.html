@@ -31,9 +31,10 @@
     <tr th:each="correntista : ${correntistas}">
         <td>[[${correntista.id}]]</td>
         <td><a th:href="@{/correntistas/{id}(id=${correntista.id})}" th:text="${correntista.nome}"></a></td>
-        <td th:text="${correntista.email}"></td>
+        <td>[[${correntista.email}]]</td>
         <td th:text="${correntista.admin}"></td>
-        <td th:text="${#strings.substring(correntista.senha,0,3)} + '...'"></td>
+        <td th:text="${#strings.length(correntista.senha) >= 3 ? #strings.substring(correntista.senha,0,3) : 'N/A'}"></td>
+
     </tr>
     </tbody>
 </table>
